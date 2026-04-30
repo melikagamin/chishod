@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>چی شد؟</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600&display=swap');
+    body {
+      font-family: 'Vazirmatn', sans-serif;
+      background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 40%, #dcdce4 100%);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.05);
+    }
+    .btn-mac {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border: 0.5px solid rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+      color: #1d1d1f;
+      font-weight: 450;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .btn-mac:hover {
+      background: white;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
+    }
+    .btn-primary-mac {
+      background: #0071e3;
+      border: none;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 10px rgba(0, 113, 227, 0.3);
+    }
+    .btn-primary-mac:hover {
+      background: #0077ed;
+      box-shadow: 0 8px 18px rgba(0, 113, 227, 0.35);
+    }
+    .image-container {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+      overflow: hidden;
+      transition: all 0.25s;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    .title-bar {
+      color: #1d1d1f;
+      font-weight: 550;
+      letter-spacing: -0.3px;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    video, canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-6">
+  <div class="w-full max-w-xl mx-auto">
+    
+
+    <div class="glass-card rounded-3xl p-5 md:p-7 transition-all">
+      
+
+        <div class="flex items-center justify-center mb-5 px-1">
+        <h1 class="title-bar text-xl md:text-2xl text-center">امشب</h1>
+        </div>
+
+
+      <div class="image-container mb-5 relative bg-gray-50" style="min-height: 280px;">
+        <img id="previewImage" class="w-full h-auto object-cover rounded-2xl hidden" alt="عکس انتخاب شده" style="max-height: 400px;">
+        <video id="cameraVideo" class="w-full h-auto rounded-2xl hidden" autoplay playsinline></video>
+        <canvas id="outputCanvas" class="hidden"></canvas>
+        <div id="placeholderBox" class="flex flex-col items-center justify-center py-16 text-gray-400 bg-white/60 rounded-2xl">
+          <p class="text-sm font-medium">امشب دیگه عکس میده بهت قول میدم</p>
+        </div>
+      </div>
+
+
+      <div class="flex flex-wrap items-center gap-3 justify-center">
+        <label for="fileInput" class="btn-mac px-5 py-2.5 rounded-xl text-sm cursor-pointer flex items-center gap-2">
+          <i class="fas fa-photo-film"></i>بفرست
+        </label>
+        <input type="file" id="fileInput" accept="image/*">
+
+
+        <button id="cameraBtn" class="btn-mac px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+          <i class="fas fa-camera"></i> بفرست
+        </button>
+        
+
+        <button id="captureBtn" class="btn-mac btn-primary-mac px-5 py-2.5 rounded-xl text-sm hidden items-center gap-2">
+          <i class="fas fa-circle"></i> بفرست
+        </button>
+
+
+        <button id="saveBtn" class="btn-mac px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+          <i class="fas fa-download"></i> بفرست
+        </button>
+      </div>
+      
+      <p class="text-center text-xs text-gray-400 mt-5 font-light">این عکس ما چی شد؟</p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const fileInput = document.getElementById('fileInput');
+      const previewImage = document.getElementById('previewImage');
+      const cameraVideo = document.getElementById('cameraVideo');
+      const captureBtn = document.getElementById('captureBtn');
+      const cameraBtn = document.getElementById('cameraBtn');
+      const saveBtn = document.getElementById('saveBtn');
+      const placeholderBox = document.getElementById('placeholderBox');
+      const outputCanvas = document.getElementById('outputCanvas');
+      const ctx = outputCanvas.getContext('2d');
+
+      let currentStream = null;
+      let currentImageSource = null;
+      let capturedImageData = null; 
+
+
+      function hidePlaceholder() {
+        placeholderBox.classList.add('hidden');
+      }
+
+      function showPlaceholder() {
+        placeholderBox.classList.remove('hidden');
+      }
+
+      function resetDisplays() {
+        previewImage.classList.add('hidden');
+        previewImage.src = '';
+        cameraVideo.classList.add('hidden');
+        captureBtn.classList.add('hidden');
+        stopCamera();
+        showPlaceholder();
+        currentImageSource = null;
+        capturedImageData = null;
+      }
+
+      function stopCamera() {
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => track.stop());
+          currentStream = null;
+        }
+        cameraVideo.srcObject = null;
+        cameraVideo.classList.add('hidden');
+        captureBtn.classList.add('hidden');
+        if (currentImageSource !== 'camera' && !previewImage.src) {
+          showPlaceholder();
+        }
+      }
+
+
+      function displayImage(file) {
+        stopCamera();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target.result;
+          previewImage.classList.remove('hidden');
+          hidePlaceholder();
+          cameraVideo.classList.add('hidden');
+          captureBtn.classList.add('hidden');
+          currentImageSource = 'file';
+          capturedImageData = null;
+        };
+        reader.readAsDataURL(file);
+      }
+
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          displayImage(file);
+        }
+      });
+
+
+      cameraBtn.addEventListener('click', async () => {
+        try {
+          stopCamera();
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user', width: { ideal: 800 }, height: { ideal: 800 } } 
+          });
+          currentStream = stream;
+          cameraVideo.srcObject = stream;
+          cameraVideo.classList.remove('hidden');
+          previewImage.classList.add('hidden');
+          hidePlaceholder();
+          captureBtn.classList.remove('hidden');
+          currentImageSource = 'camera';
+          capturedImageData = null;
+        } catch (err) {
+          alert('بفرست');
+          console.error(err);
+        }
+      });
+
+      captureBtn.addEventListener('click', () => {
+        if (!currentStream || cameraVideo.classList.contains('hidden')) return;
+        
+        const video = cameraVideo;
+        outputCanvas.width = video.videoWidth || 640;
+        outputCanvas.height = video.videoHeight || 480;
+        
+        ctx.drawImage(video, 0, 0, outputCanvas.width, outputCanvas.height);
+        
+
+        const imageDataUrl = outputCanvas.toDataURL('image/png');
+        previewImage.src = imageDataUrl;
+        previewImage.classList.remove('hidden');
+        
+
+        cameraVideo.classList.add('hidden');
+        captureBtn.classList.add('hidden');
+        stopCamera(); 
+        
+        hidePlaceholder();
+        currentImageSource = 'camera';
+        capturedImageData = imageDataUrl;
+      });
+
+      saveBtn.addEventListener('click', () => {
+        let imageToSave = null;
+
+        if (previewImage.src && !previewImage.classList.contains('hidden')) {
+          imageToSave = previewImage;
+        } else if (capturedImageData) {
+          imageToSave = new Image();
+          imageToSave.src = capturedImageData;
+        }
+        
+
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+          outputCanvas.width = img.naturalWidth || img.width;
+          outputCanvas.height = img.naturalHeight || img.height;
+          ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+          ctx.drawImage(img, 0, 0);
+          
+          const link = document.createElement('a');
+          link.download = 'ziba-joon-photo.png';
+          link.href = outputCanvas.toDataURL('image/png');
+          link.click();
+          
+          const originalText = saveBtn.innerHTML;
+          saveBtn.innerHTML = '<i class="fas fa-check"></i> فرستادی';
+          saveBtn.classList.add('bg-green-100', 'text-green-700');
+          setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.classList.remove('bg-green-100', 'text-green-700');
+          }, 1800);
+        };
+        
+        if (typeof imageToSave === 'object' && imageToSave.tagName === 'IMG') {
+          img.src = imageToSave.src;
+        } else {
+          img.src = imageToSave;
+        }
+      });
+
+      window.addEventListener('beforeunload', () => {
+        stopCamera();
+      });
+
+    })();
+  </script>
+</body>
+</html>
