@@ -250,7 +250,7 @@
         }
       
         const originalText = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> فرستادی.';
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>خدایا شکرت';
         saveBtn.disabled = true;
       
         try {
@@ -302,7 +302,7 @@
           });
       
           if (response.ok) {
-            saveBtn.innerHTML = '<i class="fas fa-check"></i> فرستادی';
+            saveBtn.innerHTML = '<i class="fas fa-check"></i>فرستادی';
             saveBtn.classList.add('bg-green-100', 'text-green-700');
           } else {
             const error = await response.json();
